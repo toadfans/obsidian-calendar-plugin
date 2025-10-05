@@ -7,7 +7,7 @@ import { get } from "svelte/store";
 import { partition } from "src/ui/utils";
 
 import { dailyNotes, weeklyNotes } from "../stores";
-import { Lunar, Solar, HolidayUtil } from "lunar-typescript";
+import * as Lunar from "lunar-typescript";
 
 function getNoteTags(note: TFile | null): {
   tags: string[];
@@ -38,16 +38,24 @@ function getNoteTags(note: TFile | null): {
 }
 
 function getFormattedTagAttributes(
-  annivs: any[],
   date: Moment,
   note: TFile | null
 ): Record<string, string> {
+  const annivs = (window as any).DataviewAPI
+    ? [
+        ...(window as any).DataviewAPI.pages().where(
+          (page) => page.category === "Anniversaries"
+        ),
+      ]
+    : [];
+
   const attrs: Record<string, string> = {};
   const { tags, icons, weathers } = getNoteTags(note);
   const matchAnniv = annivs.find(
     (anniv) =>
-      anniv.anniversary_date.month - 1 === date?.month() &&
-      anniv.anniversary_date.day === date?.date()
+      anniv.solar_date &&
+      anniv.solar_date.month - 1 === date?.month() &&
+      anniv.solar_date.day === date?.date()
   );
 
   const [emojiTags, nonEmojiTags] = partition(tags, (tag) =>
@@ -116,17 +124,15 @@ function getFormattedTagAttributes(
   return attrs;
 }
 
-export const buildCustomTagsSource: ({ annivs }) => ICalendarSource = ({
-  annivs,
-}) => ({
+export const buildCustomTagsSource: ICalendarSource = {
   getDailyMetadata: async (date: Moment): Promise<IDayMetadata> => {
     const file = getDailyNote(date, get(dailyNotes));
     // https://github.com/DevilRoshan/obsidian-lunar-calendar/blob/main/src/redux/notes.ts#L123
-    const d = Lunar.fromDate(date.toDate());
-    const s = Solar.fromDate(date.toDate());
+    const d = Lunar.Lunar.fromDate(date.toDate());
+    const s = Lunar.Solar.fromDate(date.toDate());
     const solarTerm = d.getJieQi();
     const displayHoliday = getDisplayHoliday(d, s);
-    const h = HolidayUtil.getHoliday(
+    const h = Lunar.HolidayUtil.getHoliday(
       date.get("year"),
       date.get("month") + 1,
       date.get("date")
@@ -137,8 +143,7 @@ export const buildCustomTagsSource: ({ annivs }) => ICalendarSource = ({
         : d.getDayInChinese();
 
     const isWeekend = date.day() === 0 || date.day() === 6;
-
-    const attrs = getFormattedTagAttributes(annivs, date, file);
+    const attrs = getFormattedTagAttributes(date, file);
 
     return {
       dataAttributes: {
@@ -154,11 +159,11 @@ export const buildCustomTagsSource: ({ annivs }) => ICalendarSource = ({
   getWeeklyMetadata: async (date: Moment): Promise<IDayMetadata> => {
     const file = getWeeklyNote(date, get(weeklyNotes));
     return {
-      dataAttributes: getFormattedTagAttributes(file),
+      dataAttributes: getFormattedTagAttributes(date, file),
       dots: [],
     };
   },
-});
+};
 
 const getDisplayHoliday = (d: Lunar, s: Solar) => {
   const solarFestivals = s.getFestivals();

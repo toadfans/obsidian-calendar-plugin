@@ -86,16 +86,8 @@ export default class CalendarView extends ItemView {
   async onOpen(): Promise<void> {
     // Integration point: external plugins can listen for `calendar:open`
     // to feed in additional sources.
-    const annivs = (window as any).DataviewAPI
-      ? [
-          ...(window as any).DataviewAPI.pages().where(
-            (page) => page.category === "Anniversaries"
-          ),
-        ]
-      : [];
-
     const sources = [
-      buildCustomTagsSource({ annivs }),
+      buildCustomTagsSource,
       streakSource,
       // wordCountSource,
       tasksSource,

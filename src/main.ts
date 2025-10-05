@@ -9,6 +9,7 @@ import {
   ISettings,
 } from "./settings";
 import CalendarView from "./view";
+import * as Lunar from "lunar-typescript";
 
 declare global {
   interface Window {
@@ -29,6 +30,7 @@ export default class CalendarPlugin extends Plugin {
   }
 
   async onload(): Promise<void> {
+    window.Lunar = Lunar;
     this.register(
       settings.subscribe((value) => {
         this.options = value;
