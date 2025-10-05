@@ -1632,6 +1632,7 @@ __metadata:
     "@typescript-eslint/parser": "npm:4.20.0"
     eslint: "npm:7.23.0"
     jest: "npm:26.6.3"
+    lunar-typescript: "npm:1.8.2"
     moment: "npm:2.29.1"
     obsidian: "obsidianmd/obsidian-api#master"
     obsidian-calendar-ui: "npm:0.3.12"
@@ -4206,6 +4207,13 @@ __metadata:
   dependencies:
     yallist: "npm:^4.0.0"
   checksum: cb53e582785c48187d7a188d3379c181b5ca2a9c78d2bce3e7dee36f32761d1c42983da3fe12b55cb74e1779fa94cdc2e5367c028a9b35317184ede0c07a30a9
+  languageName: node
+  linkType: hard
+
+"lunar-typescript@npm:1.8.2":
+  version: 1.8.2
+  resolution: "lunar-typescript@npm:1.8.2"
+  checksum: cd4e549662643cf33ef86d4082aae026563046f8b80796f6b27d921b33d8301cd17ecb55b4160fd56192cd182e76c36963ebd02f70f077dbf2d6f725626dc496
   languageName: node
   linkType: hard
 

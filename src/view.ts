@@ -17,12 +17,7 @@ import type { ISettings } from "src/settings";
 import Calendar from "./ui/Calendar.svelte";
 import { showFileMenu } from "./ui/fileMenu";
 import { activeFile, dailyNotes, weeklyNotes, settings } from "./ui/stores";
-import {
-  customTagsSource,
-  streakSource,
-  tasksSource,
-  wordCountSource,
-} from "./ui/sources";
+import { buildCustomTagsSource, streakSource, tasksSource } from "./ui/sources";
 
 export default class CalendarView extends ItemView {
   private calendar: Calendar;
@@ -91,10 +86,18 @@ export default class CalendarView extends ItemView {
   async onOpen(): Promise<void> {
     // Integration point: external plugins can listen for `calendar:open`
     // to feed in additional sources.
+    const annivs = (window as any).DataviewAPI
+      ? [
+          ...(window as any).DataviewAPI.pages().where(
+            (page) => page.category === "Anniversaries"
+          ),
+        ]
+      : [];
+
     const sources = [
-      customTagsSource,
+      buildCustomTagsSource({ annivs }),
       streakSource,
-      wordCountSource,
+      // wordCountSource,
       tasksSource,
     ];
     this.app.workspace.trigger(TRIGGER_ON_OPEN, sources);
@@ -279,7 +282,7 @@ export default class CalendarView extends ItemView {
     await leaf.openFile(existingFile);
 
     activeFile.setFile(existingFile);
-    workspace.setActiveLeaf(leaf, true, true)
+    workspace.setActiveLeaf(leaf, true, true);
   }
 
   async openOrCreateDailyNote(
@@ -306,7 +309,7 @@ export default class CalendarView extends ItemView {
     const leaf = inNewSplit
       ? workspace.splitActiveLeaf()
       : workspace.getUnpinnedLeaf();
-    await leaf.openFile(existingFile, { active : true, mode });
+    await leaf.openFile(existingFile, { active: true, mode });
 
     activeFile.setFile(existingFile);
   }

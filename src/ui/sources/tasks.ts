@@ -40,7 +40,10 @@ export const tasksSource: ICalendarSource = {
     const file = getDailyNote(date, get(dailyNotes));
     const dots = await getDotsForDailyNote(file);
     return {
-      dots,
+      dots: [],
+      dataAttributes: {
+        ...(dots.length > 0 ? { "data-has-tasks": "true" } : {}),
+      },
     };
   },
 
@@ -49,7 +52,10 @@ export const tasksSource: ICalendarSource = {
     const dots = await getDotsForDailyNote(file);
 
     return {
-      dots,
+      dots: [],
+      dataAttributes: {
+        ...(dots.length > 0 ? { "data-has-tasks": "true" } : {}),
+      },
     };
   },
 };

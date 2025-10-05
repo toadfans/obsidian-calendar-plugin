@@ -17,7 +17,9 @@ export const streakSource: ICalendarSource = {
   getDailyMetadata: async (date: Moment): Promise<IDayMetadata> => {
     const file = getDailyNote(date, get(dailyNotes));
     return {
-      classes: getStreakClasses(file),
+      dataAttributes: {
+        ...(file ? { "data-has-note": "true" } : {}),
+      },
       dots: [],
     };
   },
