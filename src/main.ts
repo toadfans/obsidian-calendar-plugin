@@ -31,6 +31,69 @@ export default class CalendarPlugin extends Plugin {
 
   async onload(): Promise<void> {
     window.Lunar = Lunar;
+    const getLunarInfo = (date) => {
+      const getDisplayHoliday = (d, s) => {
+        const solarFestivals = s.getFestivals();
+        const lunarFestivals = d.getFestivals();
+        const festivals = [...lunarFestivals, ...solarFestivals];
+        return festivals.length > 0
+          ? festivals[0].length < 4
+            ? festivals[0].replace("节", "")
+            : undefined
+          : undefined;
+      };
+
+      // https://github.com/DevilRoshan/obsidian-lunar-calendar/blob/main/src/redux/notes.ts#L123
+      const d = Lunar.Lunar.fromDate(date.toDate());
+      const s = Lunar.Solar.fromDate(date.toDate());
+      const solarTerm = d.getJieQi();
+      const displayHoliday = getDisplayHoliday(d, s);
+      const h = Lunar.HolidayUtil.getHoliday(
+        date.get("year"),
+        date.get("month") + 1,
+        date.get("date")
+      );
+      const displayDay =
+        d.getDay() === 1
+          ? d.getMonthInChinese().concat("月")
+          : d.getDayInChinese();
+
+      const lunarDisplay = displayHoliday || solarTerm || displayDay;
+      const lunarReal = `${d
+        .getMonthInChinese()
+        .concat("月")}${d.getDayInChinese()}`;
+      const lunarValues = [displayHoliday, solarTerm, lunarReal].filter(
+        (p) => !!p
+      );
+
+      // https://github.com/6tail/lunar-typescript
+      // https://6tail.cn/calendar/api.html#solar.festivals.html
+      const festivals = [
+        d.getJieQi(),
+        ...d.getFestivals(),
+        ...d.getOtherFestivals(),
+        ...s.getFestivals(),
+        ...s.getOtherFestivals(),
+      ]
+        .filter((t) => !!t)
+        .join("，");
+      const lunarLabel = `${d.getYearInGanZhi()}${d.getYearShengXiao()}年${d.getMonthInChinese()}月${d.getDayInChinese()}${
+        festivals ? `。${festivals}` : ""
+      }。星期${s.getWeekInChinese()}。${d.getYueXiang()}月。`;
+
+      return {
+        d,
+        s,
+        lunarDisplay,
+        lunarValues,
+        lunarLabel,
+        lunarReal,
+        h,
+      };
+    };
+
+    window.getLunarInfo = getLunarInfo;
+
     this.register(
       settings.subscribe((value) => {
         this.options = value;
@@ -48,7 +111,8 @@ export default class CalendarPlugin extends Plugin {
       checkCallback: (checking: boolean) => {
         if (checking) {
           return (
-            this.app.workspace.getLeavesOfType(VIEW_TYPE_CALENDAR).length === 0
+            // this.app.workspace.getLeavesOfType(VIEW_TYPE_CALENDAR).length === 0
+            true
           );
         }
         this.initLeaf();
@@ -86,9 +150,13 @@ export default class CalendarPlugin extends Plugin {
   }
 
   initLeaf(): void {
-    if (this.app.workspace.getLeavesOfType(VIEW_TYPE_CALENDAR).length) {
+    const leafs = this.app.workspace.getLeavesOfType(VIEW_TYPE_CALENDAR);
+    console.log("calendar leafs", leafs);
+    if (leafs.length) {
+      this.app.workspace.revealLeaf(leafs.first());
       return;
     }
+
     this.app.workspace.getRightLeaf(false).setViewState({
       type: VIEW_TYPE_CALENDAR,
     });

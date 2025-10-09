@@ -6,7 +6,6 @@ import { get } from "svelte/store";
 import { partition } from "src/ui/utils";
 
 import { dailyNotes, weeklyNotes } from "../stores";
-import * as Lunar from "lunar-typescript";
 
 function getNoteTags(note: TFile | null): {
   tags: string[];
@@ -36,52 +35,6 @@ function getNoteTags(note: TFile | null): {
   return { tags: tags.map((tag) => tag.substring(1)), icons, weathers };
 }
 
-const getLunarInfo = (date) => {
-  // https://github.com/DevilRoshan/obsidian-lunar-calendar/blob/main/src/redux/notes.ts#L123
-  const d = Lunar.Lunar.fromDate(date.toDate());
-  const s = Lunar.Solar.fromDate(date.toDate());
-  const solarTerm = d.getJieQi();
-  const displayHoliday = getDisplayHoliday(d, s);
-  const h = Lunar.HolidayUtil.getHoliday(
-    date.get("year"),
-    date.get("month") + 1,
-    date.get("date")
-  );
-  const displayDay =
-    d.getDay() === 1 ? d.getMonthInChinese().concat("月") : d.getDayInChinese();
-
-  const lunarDisplay = displayHoliday || solarTerm || displayDay;
-  const lunarReal = `${d
-    .getMonthInChinese()
-    .concat("月")}${d.getDayInChinese()}`;
-  const lunarValues = [displayHoliday, solarTerm, lunarReal].filter((p) => !!p);
-
-  // https://github.com/6tail/lunar-typescript
-  // https://6tail.cn/calendar/api.html#solar.festivals.html
-  const festivals = [
-    d.getJieQi(),
-    ...d.getFestivals(),
-    ...d.getOtherFestivals(),
-    ...s.getFestivals(),
-    ...s.getOtherFestivals(),
-  ]
-    .filter((t) => !!t)
-    .join("，");
-  const lunarLabel = `${d.getYearInGanZhi()}${d.getYearShengXiao()}年${d.getMonthInChinese()}月${d.getDayInChinese()}${
-    festivals ? `。${festivals}` : ""
-  }。星期${s.getWeekInChinese()}。${d.getYueXiang()}月。`;
-
-  return {
-    d,
-    s,
-    lunarDisplay,
-    lunarValues,
-    lunarLabel,
-    lunarReal,
-    h,
-  };
-};
-
 function getFormattedTagAttributes(
   date: moment.Moment,
   note: TFile | null
@@ -94,10 +47,10 @@ function getFormattedTagAttributes(
       ]
     : [];
 
-  const { lunarDisplay, h, lunarReal } = getLunarInfo(date);
+  const { lunarDisplay, h, lunarReal } = window.getLunarInfo(date);
   const attrs: Record<string, string> = {
-    ...(h && h.isWork() ? { "data-is-work": "true" } : {}),
-    ...(h ? { "data-is-holiday": "true" } : {}),
+    ...(h && h.isWork() ? { "data-is-work": h.getName() } : {}),
+    ...(h && !h.isWork() ? { "data-is-holiday": h.getName() } : {}),
     "data-lunar": lunarDisplay,
   };
 
@@ -107,7 +60,7 @@ function getFormattedTagAttributes(
     if (!anniv.solar_date) return [];
     if (!anniv.anniv_type) return [];
 
-    const { lunarReal: annivLunarReal } = getLunarInfo(
+    const { lunarReal: annivLunarReal } = window.getLunarInfo(
       moment(anniv.solar_date.toISODate())
     );
 
@@ -223,15 +176,4 @@ export const buildCustomTagsSource: ICalendarSource = {
       dots: [],
     };
   },
-};
-
-const getDisplayHoliday = (d: Lunar, s: Solar) => {
-  const solarFestivals = s.getFestivals();
-  const lunarFestivals = d.getFestivals();
-  const festivals = [...lunarFestivals, ...solarFestivals];
-  return festivals.length > 0
-    ? festivals[0].length < 4
-      ? festivals[0].replace("节", "")
-      : undefined
-    : undefined;
 };
