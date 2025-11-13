@@ -42,7 +42,7 @@ function getFormattedTagAttributes(
   const annivs = (window as any).DataviewAPI
     ? [
         ...(window as any).DataviewAPI.pages().where(
-          (page) => page.category === "Anniversaries"
+          (page) => page.file.frontmatter.category === "[[Anniversaries]]"
         ),
       ]
     : [];
